@@ -35,11 +35,15 @@ class SourceProfileMfaCredentialsFetcher(CachedCredentialFetcher):
         return sha1(json.dumps([self._profile, self._mfa_serial]).encode('utf-8')).hexdigest()
 
     def _get_credentials(self):
-        session = Session(profile_name=self._profile)
-        return session.client('sts').get_session_token(
-            SerialNumber=self._mfa_serial,
-            TokenCode=self._get_mfa_token(),
-        )
+        sts = Session(profile_name=self._profile).client('sts')
+        if self._mfa_serial:
+            params = {
+                'SerialNumber': self._mfa_serial,
+                'TokenCode': self._get_mfa_token(),
+            }
+        else:
+            params = {}
+        return sts.get_session_token(**params)
 
     def _get_mfa_token(self):
         prompt = 'Enter MFA code for {}: '.format(self._mfa_serial)
@@ -66,10 +70,11 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
         botocore_session = BotocoreSession(profile=self._profile)
         config = botocore_session.get_scoped_config()
 
-        mfa_serial = config.get('mfa_serial')
         source_profile = config.get('source_profile')
 
-        if mfa_serial and source_profile:
+        if source_profile:
+
+            mfa_serial = config.get('mfa_serial', '')
 
             fetcher = SourceProfileMfaCredentialsFetcher(
                 profile=source_profile,
