@@ -81,7 +81,12 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
             role_arn = config.get('role_arn')
             if role_arn:
                 external_id = config.get('external_id')
-                refresher = create_assume_role_refresher(refresher, role_arn, external_id)
+                refresher = create_assume_role_refresher(
+                    refresher=refresher,
+                    role_arn=role_arn,
+                    external_id=external_id,
+                    session_name=self._profile,
+                )
 
             return DeferredRefreshableCredentials(
                 method=self.METHOD,
@@ -102,7 +107,7 @@ def _serialize_if_needed(value, iso=False):
     return value
 
 
-def create_assume_role_refresher(refresher, role_arn, external_id):
+def create_assume_role_refresher(refresher, role_arn, external_id, session_name):
     """
     Wraps a credentials refresher to assume a role
     and return those temporary credentials.
@@ -121,7 +126,7 @@ def create_assume_role_refresher(refresher, role_arn, external_id):
 
         params = {
             'RoleArn': role_arn,
-            'RoleSessionName': 'boto-mfa-profile',
+            'RoleSessionName': session_name,
         }
         if external_id:
             params['ExternalId'] = external_id
