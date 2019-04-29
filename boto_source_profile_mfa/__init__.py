@@ -151,7 +151,7 @@ def create_assume_role_refresher(refresher, role_arn, external_id, session_name)
     return assume_role_refresher
 
 
-def get_session(profile, mfa_prompter=getpass):
+def get_session(profile_name, mfa_prompter=getpass, **kwargs):
     """
     Returns a boto3 session for the specified profile. If the profile is
     configured to assume a role and use MFA, then the MFA token will be used
@@ -162,10 +162,10 @@ def get_session(profile, mfa_prompter=getpass):
     """
 
     # Create a regular botocore session.
-    botocore_session = BotocoreSession(profile=profile)
+    botocore_session = BotocoreSession(profile=profile_name)
 
     # Create a custom credential provider.
-    custom_provider = SourceProfileMfaCredentialProvider(profile, mfa_prompter)
+    custom_provider = SourceProfileMfaCredentialProvider(profile_name, mfa_prompter)
 
     # Put the custom provider at the front of the resolver list,
     # so it will be checked/used before the default boto providers.
@@ -173,7 +173,7 @@ def get_session(profile, mfa_prompter=getpass):
     credential_resolver.providers.insert(0, custom_provider)
 
     # Return a boto3 session using the patched botocore session.
-    return Session(botocore_session=botocore_session)
+    return Session(botocore_session=botocore_session, **kwargs)
 
 
 def print_environment_variables(profile):
