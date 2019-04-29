@@ -23,9 +23,10 @@ class SourceProfileMfaCredentialsFetcher(CachedCredentialFetcher):
 
     """
 
-    def __init__(self, profile, mfa_serial, cache, expiry_window_seconds=60):
+    def __init__(self, profile, mfa_serial, mfa_prompter, cache, expiry_window_seconds=60):
         self._profile = profile
         self._mfa_serial = mfa_serial
+        self._mfa_prompter = mfa_prompter
         super(SourceProfileMfaCredentialsFetcher, self).__init__(
             cache=cache,
             expiry_window_seconds=expiry_window_seconds,
@@ -47,7 +48,7 @@ class SourceProfileMfaCredentialsFetcher(CachedCredentialFetcher):
 
     def _get_mfa_token(self):
         prompt = 'Enter MFA code for {}: '.format(self._mfa_serial)
-        token = getpass(prompt)
+        token = self._mfa_prompter(prompt)
         return token
 
 
@@ -62,8 +63,9 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
     METHOD = 'custom-source-profile-mfa'
     CANONICAL_NAME = 'custom-source-profile-mfa'
 
-    def __init__(self, profile):
+    def __init__(self, profile, mfa_prompter):
         self._profile = profile
+        self._mfa_prompter = mfa_prompter
 
     def load(self):
 
@@ -79,6 +81,7 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
             fetcher = SourceProfileMfaCredentialsFetcher(
                 profile=source_profile,
                 mfa_serial=mfa_serial,
+                mfa_prompter=self._mfa_prompter,
                 cache=cache,
             )
             refresher = fetcher.fetch_credentials
@@ -148,7 +151,7 @@ def create_assume_role_refresher(refresher, role_arn, external_id, session_name)
     return assume_role_refresher
 
 
-def get_session(profile):
+def get_session(profile, mfa_prompter=getpass):
     """
     Returns a boto3 session for the specified profile. If the profile is
     configured to assume a role and use MFA, then the MFA token will be used
@@ -162,7 +165,7 @@ def get_session(profile):
     botocore_session = BotocoreSession(profile=profile)
 
     # Create a custom credential provider.
-    custom_provider = SourceProfileMfaCredentialProvider(profile)
+    custom_provider = SourceProfileMfaCredentialProvider(profile, mfa_prompter)
 
     # Put the custom provider at the front of the resolver list,
     # so it will be checked/used before the default boto providers.
