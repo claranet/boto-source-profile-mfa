@@ -72,5 +72,10 @@ Set environment variables in Bash:
 
 ```bash
 profile=customer1
-vars=$(python -c "from boto_source_profile_mfa import print_environment_variables as p; p('${profile}')") && export $vars
+
+# with exit code, better in scripts:
+vars=$(awsp $profile) && export $vars
+
+# without exit code, easier to type:
+export eval $(awsp $profile)
 ```

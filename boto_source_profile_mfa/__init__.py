@@ -1,10 +1,12 @@
+import argparse
 import datetime
 import json
 import os
+import sys
 
 from boto3 import Session
 from botocore.credentials import CachedCredentialFetcher, CredentialProvider, DeferredRefreshableCredentials, JSONFileCache
-from botocore.exceptions import InvalidConfigError
+from botocore.exceptions import InvalidConfigError, ProfileNotFound
 from botocore.session import Session as BotocoreSession
 
 from getpass import getpass
@@ -176,20 +178,25 @@ def get_session(profile_name, mfa_prompter=getpass, **kwargs):
     return Session(botocore_session=botocore_session, **kwargs)
 
 
-def print_environment_variables(profile):
+def print_environment_variables(**kwargs):
     """
     Prints AWS credentials as environment variables.
     This uses the get_session() function to reuse MFA sessions.
 
     """
 
-    session = get_session(profile)
+    # Work with profile or profile_name.
+    profile = kwargs.pop('profile', None)
+    if profile:
+        kwargs['profile_name'] = profile
+
+    session = get_session(**kwargs)
 
     creds = session.get_credentials()
 
     if not creds:
         raise InvalidConfigError(
-            error_msg='No credentials found in profile {}'.format(profile),
+            error_msg='No credentials found for {}'.format(kwargs),
         )
 
     frozen_creds = creds.get_frozen_credentials()
@@ -203,3 +210,14 @@ def print_environment_variables(profile):
 
     if frozen_creds.token:
         print('AWS_SESSION_TOKEN={}'.format(frozen_creds.token))
+
+
+def cli():
+    parser = argparse.ArgumentParser(prog='awsp')
+    parser.add_argument('profile', help='AWS profile name')
+    args = parser.parse_args()
+    try:
+        print_environment_variables(profile=args.profile)
+    except ProfileNotFound as error:
+        print(error, file=sys.stderr)
+        sys.exit(1)

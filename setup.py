@@ -13,6 +13,11 @@ setup(
     packages=(
         'boto_source_profile_mfa',
     ),
+    entry_points = {
+        'console_scripts': (
+            'awsp=boto_source_profile_mfa:cli',
+        ),
+    },
     install_requires=(
         'boto3',
         'botocore',
