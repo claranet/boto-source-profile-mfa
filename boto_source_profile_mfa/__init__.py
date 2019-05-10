@@ -178,17 +178,14 @@ def get_session(profile_name, mfa_prompter=getpass, **kwargs):
     return Session(botocore_session=botocore_session, **kwargs)
 
 
-def print_environment_variables(**kwargs):
+def print_environment_variables(profile=None, include_region=False, **kwargs):
     """
     Prints AWS credentials as environment variables.
     This uses the get_session() function to reuse MFA sessions.
 
     """
 
-    include_region = kwargs.pop('include_region', False)
-
     # Work with profile or profile_name.
-    profile = kwargs.pop('profile', None)
     if profile:
         kwargs['profile_name'] = profile
 
