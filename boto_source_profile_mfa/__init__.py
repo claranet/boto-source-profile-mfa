@@ -185,6 +185,8 @@ def print_environment_variables(**kwargs):
 
     """
 
+    include_region = kwargs.pop('include_region', False)
+
     # Work with profile or profile_name.
     profile = kwargs.pop('profile', None)
     if profile:
@@ -211,13 +213,18 @@ def print_environment_variables(**kwargs):
     if frozen_creds.token:
         print('AWS_SESSION_TOKEN={}'.format(frozen_creds.token))
 
+    if include_region and session.region_name:
+        print('AWS_DEFAULT_REGION={}'.format(session.region_name))
+        print('AWS_REGION={}'.format(session.region_name))
+
 
 def cli():
-    parser = argparse.ArgumentParser(prog='awsp')
-    parser.add_argument('profile', help='AWS profile name')
+    parser = argparse.ArgumentParser(prog='awsp', description='Prints credentials for an AWS profile.')
+    parser.add_argument('profile', help='Profile name')
+    parser.add_argument('-r', '--region', action='store_true', help='Include region')
     args = parser.parse_args()
     try:
-        print_environment_variables(profile=args.profile)
+        print_environment_variables(profile=args.profile, include_region=args.region)
     except ProfileNotFound as error:
         print(error, file=sys.stderr)
         sys.exit(1)
