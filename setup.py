@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='boto-source-profile-mfa',
-    version='0.0.7',
+    version='0.0.8',
     description='AWS boto helper library for reusing MFA tokens in profiles with the same source profile',
     author='Raymond Butcher',
     author_email='ray.butcher@claranet.uk',
