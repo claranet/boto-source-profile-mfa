@@ -93,7 +93,7 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
                     refresher=refresher,
                     role_arn=role_arn,
                     external_id=external_id,
-                    session_name=self._profile,
+                    session_name=config.get('role_session_name') or self._profile,
                     duration_seconds=duration_seconds,
                 )
 
