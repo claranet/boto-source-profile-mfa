@@ -88,11 +88,13 @@ class SourceProfileMfaCredentialProvider(CredentialProvider):
             role_arn = config.get('role_arn')
             if role_arn:
                 external_id = config.get('external_id')
+                duration_seconds = config.get('duration_seconds')
                 refresher = create_assume_role_refresher(
                     refresher=refresher,
                     role_arn=role_arn,
                     external_id=external_id,
                     session_name=self._profile,
+                    duration_seconds=duration_seconds,
                 )
 
             return DeferredRefreshableCredentials(
@@ -114,7 +116,7 @@ def _serialize_if_needed(value, iso=False):
     return value
 
 
-def create_assume_role_refresher(refresher, role_arn, external_id, session_name):
+def create_assume_role_refresher(refresher, role_arn, external_id, session_name, duration_seconds):
     """
     Wraps a credentials refresher to assume a role
     and return those temporary credentials.
@@ -137,6 +139,8 @@ def create_assume_role_refresher(refresher, role_arn, external_id, session_name)
         }
         if external_id:
             params['ExternalId'] = external_id
+        if duration_seconds:
+            params['DurationSeconds'] = int(duration_seconds)
 
         response = client.assume_role(**params)
         credentials = response['Credentials']
